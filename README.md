@@ -1,8 +1,8 @@
 # Tensorflow-Project
-    Some Porjects related to tensorflow
+    Some Projects related to tensorflow
     
 ## System 
-### Win10 + Python 3.5 + Tensorflow 0.12.1
+### Win10 + Python 3.5 + TensorFlow 0.12.1
 
 ## Projects
 ### 1.Realization of BP
