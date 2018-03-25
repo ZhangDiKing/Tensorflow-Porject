@@ -11,17 +11,20 @@ import os
 import tensorflow as tf
 from PIL import Image
 import argparse
-import random
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_path', default='/train/train/',type=str)
-parser.add_argument('--is_for_train',default='True',type=bool)
-parser.add_argument('--validate_rate',default='0.3',type=float)
+parser.add_argument('--data_path', default='/fruits-360/Training/',type=str)
+parser.add_argument('--save_path', default='/data_tfrecords/',type=str)
+parser.add_argument('--tfrecord_name',default='data.tfrecords',type=str)
 parser.add_argument('--label_name', default='',type=str)
+parser.add_argument('--width', default='32',type=int)
+parser.add_argument('--height', default='32',type=int)
 
-def transfer_to_tf_recorder(writer_name, path, filenames, label_names):
+
+def transfer_to_tf_recorder(writer_name, path, filenames, label_names, width, height):
     """
-    This fuction basically follow the code on the repo, which transfer the iamge data into tf recorder
+    This fuction basically follow the code on the repo, which transfer the iamge data into tf recorder;
+    I used it to preprocess the fruit 360 data
     Args:
         writer_name (str): the name of the tf record writer(.tfrecords)
         path (str): the absolute path of the data
@@ -31,74 +34,50 @@ def transfer_to_tf_recorder(writer_name, path, filenames, label_names):
 
     #the writer of tf record
     writer = tf.python_io.TFRecordWriter(writer_name)
+    size=0
+    for folder in filenames:
+        index=label_names[folder]
+        for file in os.listdir(path+'/'+folder+'/'):
+            img = Image.open(path+'/'+folder+'/'+file)
 
-    #initialize gt
-    gt_init=[0 for i in range(len(label_names.keys()))]
+            if not img:
+                raise ValueError("The image file", file,"is empty.")
+            img = img.resize((width,height))
+            #transfer img to btyes
+            img_raw = img.tobytes()
 
-    for file in filenames:
-        img = Image.open(path+file)
-
-        if not img:
-            raise ValueError("The image file", file,"is empty.")
-
-        #transfer img to btyes
-        img_raw = img.tobytes()
-
-        #find corresponding index of the name
-        index, gt=-1, gt_init[:]
-        for k in label_names:
-            if k in file:
-                index=label_names[k]
-                break
-
-        if index==-1:
-            raise ValueError("Label_name does not exist on the file name. Please change file name or reinput label name.")
-        gt[index]=1
-        #transfer the data into the tf recorders
-        example = tf.train.Example(features=tf.train.Features(feature={
-            "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[gt])),
-            'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[img_raw]))
-        }))
-
+            #transfer the data into the tf recorders
+            example = tf.train.Example(features=tf.train.Features(feature={
+                "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[index])),
+                'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[img_raw]))
+            }))
+            writer.write(example.SerializeToString())
+            size+=1
         #comment this line if you don,t want too much information on the cmd/bash
-        print("Successfully convert", file, "with gt", gt)
-        writer.write(example.SerializeToString())
+        print("Successfully convert file with index", index)
+    print("totally There are", size, "samples")
     writer.close()
-    return 0
-
+    
+    return 
 def main():
     opt = parser.parse_args()
     print('parsed options:', vars(opt))
-
-    if not opt.label_name:
-        raise ValueError("Label_name is empty.Please input labels name.")
-
+    
     #access the absolute path of the data
     cwd = os.getcwd()
     filenames=os.listdir(cwd+opt.data_path)
+    
     if not filenames:
-        raise ValueError("Cannot Find any file. Please input a validate data path.")
-
-    #transfer the label name into dictionary to get correspnding index
-    label_names=opt.label_name.split('-')
-    label_names=dict (zip(label_names, range(len(label_names))))
-
-    if opt.is_for_train:
-        n_val = int(opt.validate_rate * len(filenames))
-        print("The number of validation data is", n_val)
-
-        #shuffle to splite trainning tf-reccotds and validation tf-records
-        random.seed(0)
-        random.shuffle(filenames)
-        train_filenames = filenames[n_val:]
-        validation_filenames = filenames[:n_val]
-
-        #separately transfer the image data with labels to tf recorder
-        transfer_to_tf_recorder("train.tfrecords", cwd+opt.data_path, train_filenames, label_names)
-        transfer_to_tf_recorder("validate.tfrecords", cwd+opt.data_path, validation_filenames, label_names)
-
+        raise ValueError("Cannot Find any folder. Please input a validate data path.")
+        
+    if not opt.label_name:
+        label_names=dict (zip(filenames, range(len(filenames))))
     else:
-        transfer_to_tf_recorder("test.tfrecords", cwd+opt.data_path, filenames, label_names)
+        label_names=opt.label_name.split('-')
+        label_names=dict (zip(label_names, range(len(label_names))))
 
+    transfer_to_tf_recorder(cwd + opt.save_path + opt.tfrecord_name, cwd + opt.data_path, 
+                            filenames, label_names, opt.width, opt.height)
+    
 if __name__ == '__main__':
     main()
