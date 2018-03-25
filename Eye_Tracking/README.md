@@ -1,7 +1,7 @@
 # Eye-Gaze-Estimation
     The final course project for deep learning in RPI.
-    The training datasets are provided by the teacher, you need read the paper to download the data.
-    The test datasets are hold by the teacher to test the accuracy of the CNN model.
+    The training datasets are provided by the professor, you need read the paper to download the data.
+    The test datasets are hold by the professor to test the accuracy of the CNN model.
     
 ## Convolutional Neural Network Design
 ![graph_visualization](https://user-images.githubusercontent.com/24198258/32213439-9d9856e4-bdf1-11e7-92b2-d1010ca584e4.png)
