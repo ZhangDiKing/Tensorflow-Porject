@@ -1,5 +1,5 @@
 # Data preprocessing
-    Simple functional programm to transfer data with filename as label to tf recorder
+    Simple functional programm to transfer data with folder as label to tf recorder
     Default resized size (32, 32, 8)
 
 # How to run
