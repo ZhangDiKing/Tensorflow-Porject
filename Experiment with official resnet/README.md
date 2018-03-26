@@ -40,15 +40,16 @@ in the resnet_train_general.py
     
 ### 3. datasets form:   
 training dataset: 
-train.tfrecords 
+    train.tfrecords 
 test dataset:
-test.tfrecords
+    test.tfrecords
 
 Which has:
->     features = {
->         'label':tf.FixedLenFeature([],tf.int64),
->         'image':tf.FixedLenFeature([],tf.string)
->     }
+
+     features = {
+        'label':tf.FixedLenFeature([],tf.int64),
+         'image':tf.FixedLenFeature([],tf.string)
+     }
 The label for each sample is a number in the range [0, _NUM_CLASSES)
 
 ### 3. learning rate setting
