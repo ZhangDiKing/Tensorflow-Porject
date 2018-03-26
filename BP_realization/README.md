@@ -1,4 +1,4 @@
-# 2 hidden layers Neural Network for Minst
-write the backpropagation based on the Lecture Notes of Deep Learning Courses in RPI
+# 2 back propgation realization of neural network
+    Write the backpropagation based on the Lecture Notes of Deep Learning Courses in RPI. The backpropgation is wirten in the form of tensor calculation in tensorflow, which does not utilize any builted in train_op in tensorflow. 
  
    
