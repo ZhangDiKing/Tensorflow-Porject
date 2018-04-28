@@ -32,7 +32,7 @@ The CNN design follows the paper [Eye Tracking for Everyone](http://gazecapture.
 By the way, they have just release their orignal caffe/matlab/pytorch version on github. Here is their [link](https://github.com/CSAILVision/GazeCapture).
     
 ## update
-Due to different datasets, My model setting is different from the orignal ones so that I change the structure of model to make it similar to the model in the paper, in which LRN is added and no dropout in fully connected layers. You can use the model in the follwing way.
+Due to different datasets, My model setting is different from the orignal ones. But I change the structure of model to make it similar to the model in the paper, in which LRN is added and no dropout in fully connected layers. You can use the model by using your own configuration in the follwing way.
 ```
     #network config here, suit your own model
     fc_d = [
@@ -69,4 +69,4 @@ Due to different datasets, My model setting is different from the orignal ones s
                             filter_size)
     loss, error, predict_op = model.get_param()
 ```
-   
+By the way, if you find it useful, I would appreicate your star.
