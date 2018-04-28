@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 
-import pre_processing as pre
 from eye_track_model import eye_track_model 
 import argparse
 
@@ -19,11 +18,11 @@ def get_batch(data, batch_size, i):
     return out
 
 def load_model(sess,path):
-    meta_file = path + "my-model-46.meta"
+    meta_file = path + "my-model-72.meta"
 
     saver = tf.train.import_meta_graph(meta_file)
     
-    saver.restore(sess, path+'./'+'my-model-49')
+    saver.restore(sess, path+'./'+'my-model-72')
 
     valid_nodes = tf.get_collection_ref("validation_nodes")
     eye_left = valid_nodes[0]
@@ -78,8 +77,8 @@ def main():
                                                 face:val_face_batch/ 255.-0.5,
                                                 face_mask:val_face_mask_batch
                                                 })
-                err = np.sqrt(np.sum((val_y_batch - y_batch)**2, axis=1))
-                test_error+=err
+                err = np.sum(np.sqrt(np.sum((val_y_batch - y_batch)**2, axis=1)))
+                test_error += err
             print(str(i)+" batch finished")
         print("the validation error is %s cm." %(round(test_error/test_size,4)))
 

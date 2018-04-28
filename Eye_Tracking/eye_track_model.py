@@ -48,7 +48,7 @@ def nn_layer(input_tensor,
         
     variable_summaries(weights)
     variable_summaries(biases)
-    with tf.name_scope('Wx_plus_b'):
+    with tf.name_scope('preactive'):
         preactivate = tf.matmul(input_tensor, weights) + biases
         tf.summary.histogram('pre_activations', preactivate)
     activations = act(preactivate, name='activation')
@@ -81,7 +81,7 @@ def cnn_layer(input_tensor,
 
     variable_summaries(weights)
     variable_summaries(biases)
-    with tf.name_scope('convolution_w_input_plus_b'):
+    with tf.name_scope('preactive'):
         preactivate = conv2d(input_tensor, weights) + biases
         tf.summary.histogram('pre_activations', preactivate)
     activations = act(preactivate, name='activation')
@@ -101,7 +101,7 @@ def img_cnn(input,
     else:
         reuse=True
     for i in range(len(cnn_d)):
-        with tf.name_scope('conv'+str(i)+tensor_name):
+        with tf.name_scope('conv'+str(i)+'_'+tensor_name):
             if i > 0:
                 in_channels=cnn_d[i-1]
             input=cnn_layer(input,
@@ -111,17 +111,17 @@ def img_cnn(input,
                             'conv'+str(i)+'_'+tensor_name,
                             reuse=reuse)
         if i<len(cnn_d)-1:
-            with tf.name_scope('conv'+str(i)+'_pooling'+tensor_name):
+            with tf.name_scope('conv'+str(i)+'_pooling_'+tensor_name):
                 input=max_pool(input)
         if i<2:
-            with tf.name_scope('conv'+str(i)+'_LRN'+tensor_name):
+            with tf.name_scope('conv'+str(i)+'_LRN_'+tensor_name):
                 input=tf.nn.local_response_normalization(input,
                                                     depth_radius=5,
                                                     bias=1,
                                                     alpha=0.0001,
                                                     beta=0.75)
     
-    with tf.name_scope('conv3_drop_out'+tensor_name):
+    with tf.name_scope('conv3_flat_'+tensor_name):
         dim=input.get_shape().as_list()
         input = tf.reshape(input, 
                         [tf.shape(input)[0], dim[1]*dim[2]*dim[3]])
@@ -199,7 +199,7 @@ class eye_track_model:
         h_face_mask = mask_nn(input_tensors[3],mask_fc_d)
 
         #cat eyes together
-        with tf.name_scope('eyes_sum'):
+        with tf.name_scope('eyes_cat'):
             h_eye_flat = tf.concat([h_fc1_left_eye, h_fc1_right_eye],1)
             #print('shape is',h_eye_flat.get_shape())
             ch_in = h_eye_flat.get_shape().as_list()[1]
@@ -207,7 +207,7 @@ class eye_track_model:
             #h_fc1_eye = tf.nn.dropout(h_fc1_eye, 0.5)
         
         # fully connected layer 1 for eyes,face,face mask
-        with tf.name_scope('eyes_face_sum'):
+        with tf.name_scope('eyes_face_cat'):
             h_flat = tf.concat([tf.concat([h_fc1_eye, h_fc1_face],1),h_face_mask],1)
 
             ch_in=h_flat.get_shape().as_list()[1]

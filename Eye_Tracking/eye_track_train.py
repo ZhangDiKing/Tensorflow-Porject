@@ -28,7 +28,7 @@ def main():
     
     in_channels=3
     batch_size=250
-    epoch=70
+    epoch=80
     decay=0.5
     path=opt.data_path
     print("start preprocesing data...")
@@ -77,9 +77,9 @@ def main():
     ]
     cnn_d = [
         #eye cnn channels config
-        [32, 32, 32, 32],
+        [32, 32, 64, 32],
         #face cnn channels config
-        [32, 32, 32, 32]
+        [32, 32, 64, 32]
     ]
     filter_size = [
         #face filter in cnn config
@@ -87,9 +87,11 @@ def main():
         #face filter in cnn config
         [ [5, 5], [7, 7], [5, 5], [1, 1] ]
     ]
+    #face mask nn cofig
     mask_fc_d = [32 ,32]
+
+    #the layer config for cat different features
     cat_fc_d = [32, 32]
-    
     
     model = eye_track_model([eye_left, eye_right, face, face_mask], # four place-holders you have
                             y, #x-y coordinate you have
@@ -201,8 +203,8 @@ def main():
                     _cost = _cross_entropy
                     print("epoch %d, step %d training error for one batch %g"%(k, m, train_error/batch_size))
                     print("epoch %d, step %d cost %g"%(k, m, _cost/batch_size))
-                    train_er.append(train_error/train_size)
-                    cost.append(_cost/train_size)
+                    train_er.append(train_error/batch_size)
+                    cost.append(_cost/batch_size)
                     error_step.append(g_step)
                 
             
