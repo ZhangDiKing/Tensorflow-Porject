@@ -10,8 +10,8 @@ def bias_variable(shape):
 def conv2d(x, W):
   return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='VALID')
 
-def max_pool_2x2(x):
-  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
+def max_pool(x):
+  return tf.nn.max_pool(x, ksize=[1, 3, 3, 1],
                         strides=[1, 2, 2, 1], padding='SAME')
 #definition of summaries
 def variable_summaries(var):
@@ -23,16 +23,31 @@ def variable_summaries(var):
       tf.summary.scalar('stddev', stddev)
       tf.summary.histogram('histogram', var)
 #definition of nn layers and cnn layers
-def nn_layer(input_tensor, input_dim, output_dim, layer_name, act=tf.nn.relu):
+def nn_layer(input_tensor, 
+            input_dim, 
+            output_dim, 
+            layer_name, 
+            act=tf.nn.relu, 
+            reuse=False):
   # Adding a name scope ensures logical grouping of the layers in the graph.
   with tf.name_scope(layer_name):
     # This Variable will hold the state of the weights for the layer
-    with tf.name_scope('weights'):
-        weights = weight_variable([input_dim, output_dim])
-        variable_summaries(weights)
-    with tf.name_scope('biases'):
-        biases = bias_variable([output_dim])
-        variable_summaries(biases)
+    #print([input_dim, output_dim])
+    with tf.variable_scope(layer_name+'weights',reuse=tf.AUTO_REUSE):
+        
+        weights = tf.get_variable(
+                        layer_name+'_weight', 
+                        shape=[input_dim, output_dim],
+                        initializer=tf.truncated_normal_initializer(stddev=0.1)
+                        )
+        biases = tf.get_variable(
+                        layer_name+'_biases', 
+                        shape=[output_dim],
+                        initializer=tf.constant_initializer(0.1)
+                        )
+        
+    variable_summaries(weights)
+    variable_summaries(biases)
     with tf.name_scope('Wx_plus_b'):
         preactivate = tf.matmul(input_tensor, weights) + biases
         tf.summary.histogram('pre_activations', preactivate)
@@ -40,16 +55,32 @@ def nn_layer(input_tensor, input_dim, output_dim, layer_name, act=tf.nn.relu):
     tf.summary.histogram('activations', activations)
     return activations
 
-def cnn_layer(input_tensor, filter_shape,input_dim, output_dim, layer_name, act=tf.nn.relu):
+def cnn_layer(input_tensor, 
+            filter_shape,
+            input_dim, 
+            output_dim, 
+            layer_name, 
+            act=tf.nn.relu,
+            reuse=False):
   # Adding a name scope ensures logical grouping of the layers in the graph.
   with tf.name_scope(layer_name):
     # This Variable will hold the state of the weights for the layer
-    with tf.name_scope('weights'):
-        weights = weight_variable([filter_shape[0],filter_shape[1],input_dim, output_dim])
-        variable_summaries(weights)
-    with tf.name_scope('biases'):
-        biases = bias_variable([output_dim])
-        variable_summaries(biases)
+    #print([filter_shape[0],filter_shape[1],input_dim, output_dim])
+    with tf.variable_scope(layer_name+'weights', reuse=tf.AUTO_REUSE):
+            
+            weights = tf.get_variable(
+                            layer_name+'_weight', 
+                            shape=[filter_shape[0],filter_shape[1],input_dim, output_dim],
+                            initializer=tf.truncated_normal_initializer(stddev=0.1)
+                            )
+            biases = tf.get_variable(
+                            layer_name+'_biases', 
+                            shape=[output_dim],
+                            initializer=tf.constant_initializer(0.1)
+                            )
+
+    variable_summaries(weights)
+    variable_summaries(biases)
     with tf.name_scope('convolution_w_input_plus_b'):
         preactivate = conv2d(input_tensor, weights) + biases
         tf.summary.histogram('pre_activations', preactivate)
@@ -57,80 +88,146 @@ def cnn_layer(input_tensor, filter_shape,input_dim, output_dim, layer_name, act=
     tf.summary.histogram('activations', activations)
     return activations
 
-def img_cnn(input_tensor,in_channels,hc_d,tensor_name):
-    #define the parameters in convolution layers of left eye
-    # convolution layer 1 for left eye  
-    h_conv1=cnn_layer(input_tensor,[5,5],in_channels, 32,'conv1_'+tensor_name)#60,60,32
-    with tf.name_scope('conv1_pooling'+tensor_name):
-        h_pool1=max_pool_2x2(h_conv1) #30,30,32
+def img_cnn(input, 
+            in_channels,
+            tensor_name, 
+            cnn_d,
+            filter_size, 
+            fc_d):
+    # define the parameters in convolution layers of left eye
+    # convolution layer 1 for left eye 
+    if tensor_name=='face':
+        reuse=False 
+    else:
+        reuse=True
+    for i in range(len(cnn_d)):
+        with tf.name_scope('conv'+str(i)+tensor_name):
+            if i > 0:
+                in_channels=cnn_d[i-1]
+            input=cnn_layer(input,
+                            filter_size[i], 
+                            in_channels, 
+                            cnn_d[i],
+                            'conv'+str(i)+'_'+tensor_name,
+                            reuse=reuse)
+        if i<len(cnn_d)-1:
+            with tf.name_scope('conv'+str(i)+'_pooling'+tensor_name):
+                input=max_pool(input)
+        if i<2:
+            with tf.name_scope('conv'+str(i)+'_LRN'+tensor_name):
+                input=tf.nn.local_response_normalization(input,
+                                                    depth_radius=5,
+                                                    bias=1,
+                                                    alpha=0.0001,
+                                                    beta=0.75)
     
-    # convolution layer 2 for left eye  
-    h_conv2=cnn_layer(h_pool1,[7,7],32, 32,'conv2_'+tensor_name)#24,24,32
-    with tf.name_scope('conv2_pooling'+tensor_name):
-        h_pool2=max_pool_2x2(h_conv2) #12,12,32
-    
-    # convolution layer 3 for left eye  
-    h_conv3=cnn_layer(h_pool2,[5,5],32, 32,'conv3_'+tensor_name)#8,8,32
-        
     with tf.name_scope('conv3_drop_out'+tensor_name):
-        h_conv3_flat=tf.reshape(h_conv3, [tf.shape(h_conv3)[0], 8*8*32])
-        h_drop      =tf.nn.dropout(h_conv3_flat, 0.5)
-    
-    # fully connected layer 1 for left eye
-    h_fc1=nn_layer(h_drop, 8*8*32, hc_d, 'fc1_'+tensor_name)
-    return h_fc1
+        dim=input.get_shape().as_list()
+        input = tf.reshape(input, 
+                        [tf.shape(input)[0], dim[1]*dim[2]*dim[3]])
+        #input = tf.nn.dropout(input, 0.5)
+    #print(input.get_shape().as_list())
 
-def mask_nn(face_mask,hc_d):
-    # fully connected layer 1 for face mask
-    with tf.name_scope('face_mask_drop_out'):
-        h_face_mask_flat=tf.reshape(tf.cast(face_mask,tf.float32), [tf.shape(face_mask)[0], 25*25])
-        h_face_mask_drop=tf.nn.dropout(h_face_mask_flat, 0.5)
-    # fully connected layer 1 for right eye
-    h_fc1_face_mask=nn_layer(h_face_mask_drop, 25*25, hc_d, 'fc1_face_mask')
-    
-    # fully connected layer 2 for face mask
-    h_fc2_face_mask=nn_layer(h_fc1_face_mask, hc_d, hc_d, 'fc2_face_mask')
-    return h_fc2_face_mask
+    for i in range(len(fc_d)):
+    # fully connected layer for image
+        if i == 0:
+            ch_in = input.get_shape().as_list()[1]
+        else:
+            ch_in = fc_d[i-1]
+        input = nn_layer(input, 
+                        ch_in, 
+                        fc_d[i], 
+                        'fc'+str(i)+'_'+tensor_name,
+                        reuse=reuse)
+        #input = tf.nn.dropout(input, 0.5)
+    return input
+
+def mask_nn(input,fc_d):
+    with tf.name_scope('face_mask_flat'):
+        dim=input.get_shape().as_list()
+        input = tf.reshape(input, 
+                        [tf.shape(input)[0], dim[1]*dim[2]])
+        #input = tf.nn.dropout(input, 0.5)
+
+    for i in range(len(fc_d)):
+    # fully connected layer 
+        if i == 0:
+            ch_in = input.get_shape().as_list()[1]
+        else:
+            ch_in = fc_d[i-1]
+        input=nn_layer(input, ch_in, fc_d[i], 'fc'+str(i)+'_'+'mask')
+        #input=tf.nn.dropout(input, 0.5)
+    return input
     
 class eye_track_model:
-    def __init__(self, batch_size, input_tensors, labels, in_channel,hc_d=128):
+    def __init__(self, 
+                input_tensors, 
+                labels, 
+                in_channel, 
+                fc_d=[[]], 
+                mask_fc_d=[],
+                cat_fc_d=[],
+                cnn_d=[],
+                filter_size=[]):
         
-        #define the parameters in convolution layers of left eye
-        h_fc1_left_eye=img_cnn(input_tensors[0],in_channel,hc_d,'eye_left')
+        
+        #define the parameters in convolution layers of eyes and faces
+        h_fc1_left_eye = img_cnn(input_tensors[0], 
+                                in_channel,
+                                'eye', 
+                                cnn_d[0],
+                                filter_size[0], 
+                                fc_d[0])
+
         #define the parameters in convolution layers of right eye
-        h_fc1_right_eye=img_cnn(input_tensors[1],in_channel,hc_d,'eye_right')  
-        # %%
+        h_fc1_right_eye = img_cnn(input_tensors[1], 
+                                in_channel,
+                                'eye', 
+                                cnn_d[0],
+                                filter_size[0], 
+                                fc_d[0])  
+
         #define the parameters in convolution layers of face
-        h_fc1_face=img_cnn(input_tensors[2],in_channel,hc_d,'face')
+        h_fc1_face = img_cnn(input_tensors[2], 
+                            in_channel,
+                            'face', 
+                            cnn_d[1],
+                            filter_size[1], 
+                            fc_d[1])
         
-        h_face_mask=mask_nn(input_tensors[3],hc_d)
-        h_eye_flat=tf.concat([h_fc1_left_eye, h_fc1_right_eye],1)
-        h_fc1_eye =nn_layer(h_eye_flat, 2*hc_d, hc_d, 'fc1_eye')
+        #the mask nn layer
+        h_face_mask = mask_nn(input_tensors[3],mask_fc_d)
+
+        #cat eyes together
+        with tf.name_scope('eyes_sum'):
+            h_eye_flat = tf.concat([h_fc1_left_eye, h_fc1_right_eye],1)
+            #print('shape is',h_eye_flat.get_shape())
+            ch_in = h_eye_flat.get_shape().as_list()[1]
+            h_fc1_eye = nn_layer(h_eye_flat, ch_in, cat_fc_d[0], 'fc1_eye')
+            #h_fc1_eye = tf.nn.dropout(h_fc1_eye, 0.5)
         
         # fully connected layer 1 for eyes,face,face mask
-        #due to different version of tensorflow, this sentense may be changed
-        h_flat             =tf.concat([tf.concat([h_fc1_eye, h_fc1_face],1),h_face_mask],1)
-        #h_flat             =tf.concat(1,[tf.concat(1,[h_fc1_eye, h_fc1_face]),h_fc2_face_mask])
-        h_fc1_face_eye_mask=nn_layer(h_flat, 3*hc_d, hc_d, 'fc1_eye_face_mask')
-        
-        # %%
+        with tf.name_scope('eyes_face_sum'):
+            h_flat = tf.concat([tf.concat([h_fc1_eye, h_fc1_face],1),h_face_mask],1)
+
+            ch_in=h_flat.get_shape().as_list()[1]
+            h_fc1_face_eye_mask = nn_layer(h_flat, ch_in, cat_fc_d[1], 'fc1_eye_face_mask')
+            #h_fc1_face_eye_mask = tf.nn.dropout(h_fc1_face_eye_mask, 0.5)        
         
         with tf.name_scope('final_out'):
-            W_out     =weight_variable([hc_d, 2])
-            B_out     =bias_variable([2])
-            #h_eye_drop = tf.nn.dropout(h_face_mask_flat, 0.5)
-            self.predict_op=tf.matmul(h_fc1_face_eye_mask, W_out) + B_out
+            W_out = weight_variable([cat_fc_d[1], 2])
+            B_out = bias_variable([2])
+            self.predict_op = tf.matmul(h_fc1_face_eye_mask, W_out) + B_out
         
-        # %%
         #loss and training operation
         with tf.name_scope('loss_and_error'):
-            self.loss =tf.reduce_mean(tf.pow(self.predict_op-labels, 2))/2
-            self.error=tf.reduce_sum(tf.sqrt(tf.reduce_sum(tf.pow(self.predict_op-labels, 2),reduction_indices=1)))
+            self.loss = tf.reduce_mean(tf.pow(self.predict_op - labels, 2))/2.0
+            self.error = tf.reduce_sum(tf.sqrt(tf.reduce_sum(tf.pow(self.predict_op-labels, 2),reduction_indices=1)))
         tf.summary.scalar('loss', self.loss)
         tf.summary.scalar('err', self.error)
         
     def get_param(self):
-        return self.loss,self.error,self.predict_op
+        return self.loss, self.error, self.predict_op
         
         
 
