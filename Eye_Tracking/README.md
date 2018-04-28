@@ -37,7 +37,7 @@ Due to different datasets, My model setting is different from the orignal ones. 
         [ [5, 5], [7, 7], [5, 5], [1, 1] ]
     ]
     #face mask nn cofig
-     mask_fc_d = [32 ,32]
+    mask_fc_d = [32 ,32]
 
     #the layer config for cat different features
     cat_fc_d = [32, 32]
