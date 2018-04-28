@@ -3,36 +3,19 @@ The final course project for deep learning in RPI.
 The training datasets are provided by the professor, you need read the paper to download the data.
 The test datasets are hold by the professor to test the accuracy of the CNN model.
     
-## Convolutional Neural Network Design
-![graph_visualization](https://user-images.githubusercontent.com/24198258/32213439-9d9856e4-bdf1-11e7-92b2-d1010ca584e4.png)
-
-|Layer Name	|Input Dimension|Weight Size|Output Dimension|Activation Function |
-|:---------:|:-------------:|:---------:|:--------------:|:------------------:|
-|conv1_xx|(250, 64, 64, 3)|	(5, 5, 3, 32)|	(250, 60, 60, 32)|	Relu|
-|conv1_xx_pooling|(250, 60, 60, 32)| |(250, 30, 30, 32)| |
-|conv2_xx|(250, 30, 30, 3)|	(7, 7, 32, 32)| (250, 24, 24, 32) |	Relu|
-|conv2_xx_pooling|(250, 24, 24, 32)| |	(250, 12, 12, 32)| |
-|conv3_xx |(250, 12, 12, 3)|(5, 5, 3, 32)|	(250, 8, 8, 32)|	Relu|
-|conv3_xx_dropout|(250, 8, 8, 32) |		|(250, 8, 8, 32)| |
-|fc1_xx|(250, 8 * 8 * 32)|(8 * 8 * 32, 32)|(250, 32)|Relu|
-|face_mask_dropout|(250, 25 * 25)| |(250, 25 * 25)| |	
-|fc1_face_mask|(250, 25 * 25)|	(25 * 25, 32) |	(250, 32) |	Relu |
-|fc2_face_mask|	(250, 32) |(32, 32) |	(250, 32) |	Relu |
-|fc1_eye|(250, 32 * 2)|(32 * 2, 32) |	(250, 32) |	Relu |
-|fc1_face_eye_mask |(250, 32 * 3) |	(32 * 3, 32) |	(250, 32)  |	Relu|
-|final_out |(250, 32) |	(32, 2) |	(250, 2)||	
-
+## Convolutional Neural Network Visualization
+![graph_visualization](https://github.com/dzk9528/Tensorflow-Project/blob/master/Eye_Tracking/graph_vis.png)
 
 ## Error Plot
-Finally, the test error is 1.77.<br />
-![error_plot](https://user-images.githubusercontent.com/24198258/32213509-ec1c6a58-bdf1-11e7-936e-cbcce6e6f56e.png)
+The validation error is 1.77 cm for my course, but after fine-tuning the paramters as well as refering the official model, the validation error is now 1.65 cm.<br />
+![error_plot](https://github.com/dzk9528/Tensorflow-Project/blob/master/Eye_Tracking/error_plot.png| width=100)
 
 ## Reference
 The CNN design follows the paper [Eye Tracking for Everyone](http://gazecapture.csail.mit.edu/cvpr2016_gazecapture.pdf). <br />
 By the way, they have just release their orignal caffe/matlab/pytorch version on github. Here is their [link](https://github.com/CSAILVision/GazeCapture).
     
 ## update
-Due to different datasets, My model setting is different from the orignal ones. But I change the structure of model to make it similar to the model in the paper, in which LRN is added and no dropout in fully connected layers. You can use the model by using your own configuration in the follwing way.
+Due to different datasets, My model setting is different from the orignal ones. But I change the structure of model to make it similar to the model in the paper, in which LRN is added for the first and second convolutional layers, max pooling for CNN layers has kernel size=3 with a stride of 2 and no dropout in fully connected layers. But the weight size is still different for the limitation of mt GPU, but You can configure the model in the follwing way.
 ```
     #network config here, suit your own model
     fc_d = [
@@ -69,4 +52,4 @@ Due to different datasets, My model setting is different from the orignal ones. 
                             filter_size)
     loss, error, predict_op = model.get_param()
 ```
-By the way, if you find it useful, I would appreicate your star.
+By the way, if you find it useful, I would appreicate your stars.
