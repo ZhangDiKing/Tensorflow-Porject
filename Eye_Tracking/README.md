@@ -1,7 +1,7 @@
 # Eye-Gaze-Estimation
-    The final course project for deep learning in RPI.
-    The training datasets are provided by the professor, you need read the paper to download the data.
-    The test datasets are hold by the professor to test the accuracy of the CNN model.
+The final course project for deep learning in RPI.
+The training datasets are provided by the professor, you need read the paper to download the data.
+The test datasets are hold by the professor to test the accuracy of the CNN model.
     
 ## Convolutional Neural Network Design
 ![graph_visualization](https://user-images.githubusercontent.com/24198258/32213439-9d9856e4-bdf1-11e7-92b2-d1010ca584e4.png)
@@ -24,9 +24,49 @@
 
 
 ## Error Plot
-    Finally, the test error is 1.77.
+Finally, the test error is 1.77.<br />
 ![error_plot](https://user-images.githubusercontent.com/24198258/32213509-ec1c6a58-bdf1-11e7-936e-cbcce6e6f56e.png)
 
 ## Reference
-    [1] Krafka, Kyle & Khosla, Aditya & Kellnhofer, Petr & Kannan, Harini & Bhandarkar, Suchendra & Matusik, Wojciech & Torralba, Antonio. (2016). Eye Tracking for Everyone. 2176-2184. 10.1109/CVPR.2016.239. 
+The CNN design follows the paper [Eye Tracking for Everyone](http://gazecapture.csail.mit.edu/cvpr2016_gazecapture.pdf). <br />
+By the way, they have just release their orignal caffe/matlab/pytorch version on github. Here is their [link](https://github.com/CSAILVision/GazeCapture).
+    
+## update
+Due to different datasets, My model setting is different from the orignal ones so that I change the structure of model to make it similar to the model in the paper, in which LRN is added and no dropout in fully connected layers. You can use the model in the follwing way.
+```
+    #network config here, suit your own model
+    fc_d = [
+        #eye fc in cnn config
+        [32],
+        #face fc in cnn config
+        [64, 32]
+    ]
+    cnn_d = [
+        #eye cnn channels config
+        [32, 32, 32, 32],
+        #face cnn channels config
+        [32, 32, 32, 32]
+    ]
+    filter_size = [
+        #face filter in cnn config
+        [ [5, 5], [7, 7], [5, 5], [1, 1] ],
+        #face filter in cnn config
+        [ [5, 5], [7, 7], [5, 5], [1, 1] ]
+    ]
+    #face mask nn cofig
+     mask_fc_d = [32 ,32]
+
+    #the layer config for cat different features
+    cat_fc_d = [32, 32]
+    
+    model = eye_track_model([eye_left, eye_right, face, face_mask], # four place-holders you have
+                            y, #x-y coordinate you have
+                            in_channels, 
+                            fc_d, 
+                            mask_fc_d,
+                            cat_fc_d,
+                            cnn_d,
+                            filter_size)
+    loss, error, predict_op = model.get_param()
+```
    
