@@ -14,15 +14,53 @@ def hyper_setting(default_setting = True):
         ]
 
         #cnn setting
+        hyper_para["cnn_d"] = [96, 256, 384, 64]   
+        hyper_para["filter_size"] = [[11, 11], [5, 5], [3, 3], [1, 1]] #filter size in cnn config
+        hyper_para["cnn_strides"] = [4, 1, 1, 1]
+        hyper_para["cnn_padding"] = [0, 2, 1, 0]
+
+        #pooling layer setting
+        hyper_para["pooling_k_size"] = [3, 3]
+        hyper_para["pooling_strides"] = [2, 2]
+        hyper_para["pooling_padding"] = ['SAME', 'SAME']
+
+        #number of LRN 
+        hyper_para["n_LRN"] = 2
+
+        #face mask neural network 
+        hyper_para["mask_fc_d"] = [256 ,128]
+
+        #the layer config for cat different features
+        hyper_para["cat_fc_d"] = [128, 128]
+        
+        #input channel
+        hyper_para["in_channels"] = 3
+
+        #learning rate and decay
+        hyper_para["decay"] = 0.5
+        hyper_para["learning_rate"] = 0.001
+    else:
+        '''
+        Your own setting here.
+        '''
+
+        hyper_para["fc_d"] = [
+            #eye fc in cnn config
+            [],
+            #face fc in cnn config
+            [64, 32]
+        ]
+
+        #cnn setting
         hyper_para["cnn_d"] = [32, 32, 64, 32]   
         hyper_para["filter_size"] = [[5, 5], [7, 7], [5, 5], [1, 1]] #filter size in cnn config
         hyper_para["cnn_strides"] = [1, 1, 1, 1]
-        hyper_para["cnn_padding"] = ['VALID', 'VALID', 'VALID', 'VALID']
+        hyper_para["cnn_padding"] = [0, 0, 0, 0]
 
         #pooling layer setting
-        hyper_para["pooling_k_size"] = [3, 3, 3]
-        hyper_para["pooling_strides"] = [2, 2, 2]
-        hyper_para["pooling_padding"] = ['SAME', 'SAME', 'SAME']
+        hyper_para["pooling_k_size"] = [3, 3]
+        hyper_para["pooling_strides"] = [2, 2]
+        hyper_para["pooling_padding"] = ['SAME', 'SAME']
 
         #number of LRN 
         hyper_para["n_LRN"] = 2
@@ -39,10 +77,6 @@ def hyper_setting(default_setting = True):
         #learning rate and decay
         hyper_para["decay"] = 0.5
         hyper_para["learning_rate"] = 0.001
-    else:
-        '''
-        Your own setting here.
-        '''
 
     return hyper_para
 

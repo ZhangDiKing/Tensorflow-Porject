@@ -9,8 +9,16 @@ def bias_variable(shape, init_val = 0.1):
     return tf.Variable(initial)
 
 #definition of convolution and pooling
-def conv2d(x, weights, s = 1, padding = 'VALID'):
-    return tf.nn.conv2d(x, weights, strides = [1, s, s, 1], padding = padding)
+def conv2d(x, weights, s = 1, p = 0):
+    if p > 0:
+        paddings = tf.constant([[0, 0], 
+                                [p, p],
+                                [p, p],
+                                [0, 0]])
+        x_pad = tf.pad(x, paddings, "CONSTANT") 
+        return tf.nn.conv2d(x_pad, weights, strides = [1, s, s, 1], padding = 'VALID') 
+    else:
+        return tf.nn.conv2d(x, weights, strides = [1, s, s, 1], padding = 'VALID') 
 
 def max_pool(x, k = 3, s = 2, padding = 'SAME'):
     return tf.nn.max_pool(x, ksize = [1, k, k, 1], strides = [1, s, s, 1], padding = padding)

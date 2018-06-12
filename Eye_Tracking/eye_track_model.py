@@ -43,7 +43,7 @@ class eye_track_model:
             h_fc1_eye = nn_layer(h_eye_flat, ch_in, hyper_para["cat_fc_d"][0], 'fc1_eye')
             #h_fc1_eye = tf.nn.dropout(h_fc1_eye, 0.5)
         
-        # fully connected layer 1 for eyes,face,face mask
+        # fully connected layer 1 for eyes, face, face mask
         with tf.name_scope('eyes_face_cat'):
             h_flat = tf.concat([tf.concat([h_fc1_eye, h_fc1_face],1),h_face_mask],1)
 
@@ -86,13 +86,7 @@ class eye_track_model:
                                 'conv' + str(i) + '_' + tensor_name, 
                                 act = tf.nn.relu, 
                                 reuse = reuse)
-
-            if i < len(hyper_para["cnn_d"]) - 1:
-                with tf.name_scope('conv' + str(i) + '_pooling_' + tensor_name):
-                    input = max_pool(input, 
-                                    hyper_para["pooling_k_size"][i], 
-                                    hyper_para["pooling_strides"][i],
-                                    hyper_para["pooling_padding"][i])
+            
             if i < 2:
                 #following the setting of the orignal paper
                 with tf.name_scope('conv'+str(i)+'_LRN_'+tensor_name):
@@ -101,6 +95,12 @@ class eye_track_model:
                                                                 bias = 1,
                                                                 alpha = 0.0001,
                                                                 beta = 0.75)
+            if i < len(hyper_para["cnn_d"]) - 2:
+                with tf.name_scope('conv' + str(i) + '_pooling_' + tensor_name):
+                    input = max_pool(input, 
+                                    hyper_para["pooling_k_size"][i], 
+                                    hyper_para["pooling_strides"][i],
+                                    hyper_para["pooling_padding"][i])
         
         with tf.name_scope('conv3_flat_' + tensor_name):
             dim = input.get_shape().as_list()
