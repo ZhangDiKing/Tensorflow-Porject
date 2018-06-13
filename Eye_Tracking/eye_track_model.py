@@ -147,7 +147,7 @@ class eye_track_model:
     def fit(self, 
             train_data, 
             val_data, 
-            path = "",
+            path = ".",
             batch_size = 250,
             epoch = 80):
         start = time.time()
@@ -156,7 +156,7 @@ class eye_track_model:
         ###########################################################
         #########<configuration of neural network here>############
         hyper_para = hyper_setting(self.default_setting)
-        min_err = 2.0
+        min_err = 2.5
         train_size = train_data[0].shape[0]
         test_size = val_data[0].shape[0]
         ##########################################################
@@ -228,15 +228,14 @@ class eye_track_model:
             start = time.time()
             for i in range(int(test_size / batch_size)):
                 batch_data = get_batch(val_data, batch_size, i)
-                with tf.device("/gpu:0"):
-                    test_error = test_error+error.eval(session = sess, 
-                                                        feed_dict = {
-                                                                eye_left: batch_data[0] / 255.-0.5, 
-                                                                eye_right: batch_data[1] / 255.-0.5,
-                                                                face: batch_data[2] / 255.-0.5,
-                                                                face_mask: batch_data[3],
-                                                                y: batch_data[4]
-                                                                })
+                test_error = test_error+error.eval(session = sess, 
+                                                    feed_dict = {
+                                                            eye_left: batch_data[0] / 255.-0.5, 
+                                                            eye_right: batch_data[1] / 255.-0.5,
+                                                            face: batch_data[2] / 255.-0.5,
+                                                            face_mask: batch_data[3],
+                                                            y: batch_data[4]
+                                                            })
                 
             test_er.append(test_error / test_size)
             test_step.append(g_step)
@@ -246,8 +245,9 @@ class eye_track_model:
             #learning_rate=learning_rate*0.7
             if(test_error / test_size < min_err):
                 min_err = test_error / test_size
-                path = os.getcwd() + path
-                save_path = saver.save(sess, path + "my-model", global_step = k)
+                if path == ".":
+                    save_path = os.getcwd()
+                save_path = saver.save(sess, save_path + "my-model", global_step = k)
                 print('find out ranked error! Min error is %s', (round(min_err, 4)))
             
             start = time.time()
@@ -255,34 +255,33 @@ class eye_track_model:
             for m in range(int(train_size / batch_size)):
                 batch_data = get_batch(train_data, batch_size, m)
                 
-                with tf.device("/gpu:0"):
-                    #compute batch error every 100 steps
-                    if g_step % 100 == 0:
-                        _cross_entropy,_error = sess.run([loss,error],
-                                                        feed_dict={
-                                                        eye_left: batch_data[0] / 255.-0.5, 
-                                                        eye_right: batch_data[1] / 255.-0.5,
-                                                        face: batch_data[2] / 255.-0.5,
-                                                        face_mask: batch_data[3],
-                                                        y: batch_data[4]
-                                                        })
-                        train_error = _error
-                        _cost = _cross_entropy
-                        print("epoch %d, step %d training error for one batch %g"%(k, m, train_error / batch_size))
-                        print("epoch %d, step %d cost %g"%(k, m, _cost / batch_size))
-                        train_er.append(train_error / batch_size)
-                        cost.append(_cost / batch_size)
-                        error_step.append(g_step)
-                    
-                    train_step.run(session = sess, 
-                                    feed_dict={
-                                            eye_left: batch_data[0] / 255.-0.5, 
-                                            eye_right: batch_data[1] / 255.-0.5,
-                                            face: batch_data[2] / 255.-0.5,
-                                            face_mask: batch_data[3],
-                                            y: batch_data[4]
-                                            })
-                    g_step+=1
+                #compute batch error every 100 steps
+                if g_step % 100 == 0:
+                    _cross_entropy,_error = sess.run([loss,error],
+                                                    feed_dict={
+                                                    eye_left: batch_data[0] / 255.-0.5, 
+                                                    eye_right: batch_data[1] / 255.-0.5,
+                                                    face: batch_data[2] / 255.-0.5,
+                                                    face_mask: batch_data[3],
+                                                    y: batch_data[4]
+                                                    })
+                    train_error = _error
+                    _cost = _cross_entropy
+                    print("epoch %d, step %d training error for one batch %g"%(k, m, train_error / batch_size))
+                    print("epoch %d, step %d cost %g"%(k, m, _cost / batch_size))
+                    train_er.append(train_error / batch_size)
+                    cost.append(_cost / batch_size)
+                    error_step.append(g_step)
+                
+                train_step.run(session = sess, 
+                                feed_dict={
+                                        eye_left: batch_data[0] / 255.-0.5, 
+                                        eye_right: batch_data[1] / 255.-0.5,
+                                        face: batch_data[2] / 255.-0.5,
+                                        face_mask: batch_data[3],
+                                        y: batch_data[4]
+                                        })
+                g_step+=1
         
             elapsed = (time.time() - start_time)
             print("total Time for one epoch used is %d s."% (round(elapsed, 4)))
