@@ -2,6 +2,7 @@ import tensorflow as tf
 import pickle
 import time
 import numpy as np
+import os
 
 from utils import hyper_setting, get_batch, read_data, draw_plot
 from wrapped_network import weight_variable, bias_variable, variable_summaries, nn_layer, cnn_layer, max_pool
@@ -245,8 +246,9 @@ class eye_track_model:
             #learning_rate=learning_rate*0.7
             if(test_error / test_size < min_err):
                 min_err = test_error / test_size
+                path = os.getcwd() + path
                 save_path = saver.save(sess, path + "my-model", global_step = k)
-                print('find out ranked error! Min error is %s',(round(min_err, 4)))
+                print('find out ranked error! Min error is %s', (round(min_err, 4)))
             
             start = time.time()
             
@@ -284,16 +286,17 @@ class eye_track_model:
         
             elapsed = (time.time() - start_time)
             print("total Time for one epoch used is %d s."% (round(elapsed, 4)))
-            #add summary at last
-            summary_train= sess.run(merged,
-                                    feed_dict = {
-                                                eye_left: batch_data[0] / 255.-0.5, 
-                                                eye_right: batch_data[1] / 255.-0.5,
-                                                face: batch_data[2] / 255.-0.5,
-                                                face_mask: batch_data[3],
-                                                y: batch_data[4]
-                                                })
-            train_writer.add_summary(summary_train, k)
+        
+        #add summary at last
+        summary_train= sess.run(merged,
+                                feed_dict = {
+                                            eye_left: batch_data[0] / 255.-0.5, 
+                                            eye_right: batch_data[1] / 255.-0.5,
+                                            face: batch_data[2] / 255.-0.5,
+                                            face_mask: batch_data[3],
+                                            y: batch_data[4]
+                                            })
+        train_writer.add_summary(summary_train, k)
         sess.close()
         print("training completed")
         print("the min error we have is %s" %(round(min_err, 4)))
